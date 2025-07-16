@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"weatherservice/internal/infrastructure/repo"
+	repo "weather_service/internal/infrastructure/repo/userrepo"
 )
 
 type AuthUseCase struct {

@@ -1,26 +1,24 @@
 package config
 
 import (
-	"os"
+	"fmt"
 
-	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
 )
 
 type Config struct {
-	DBHost     string
-	DBPort     string
-	DBUser     string
-	DBPassword string
-	DBName     string
+	DBHost          string `envconfig:"DB_HOST" required:"true"`
+	DBPort          string `envconfig:"DB_PORT" default:"5432"`
+	DBUser          string `envconfig:"DB_USER" required:"true"`
+	DBPassword      string `envconfig:"DB_PASSWORD" required:"true"`
+	DBName          string `envconfig:"DB_NAME" required:"true"`
+	GOOSEMigrations string `envconfig:"GOOSE_MIGRATIONS" raquired:"true"`
 }
 
 func LoadConfig() *Config {
-	_ = godotenv.Load()
-	return &Config{
-		DBHost:     os.Getenv("DB_HOST"),
-		DBPort:     os.Getenv("DB_PORT"),
-		DBUser:     os.Getenv("DB_USER"),
-		DBPassword: os.Getenv("DB_PASSWORD"),
-		DBName:     os.Getenv("DB_NAME"),
+	var cfg Config
+	if err := envconfig.Process("", &cfg); err != nil {
+		fmt.Errorf("Failed to load configuration: %v", err)
 	}
+	return &cfg
 }
