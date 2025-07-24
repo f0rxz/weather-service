@@ -7,9 +7,9 @@ import (
 	"weather_service/internal/controller/http/handlers/authhandler"
 	"weather_service/internal/controller/http/handlers/weatherhandler"
 	"weather_service/internal/infrastructure/connectors"
-	repo "weather_service/internal/infrastructure/repo/userrepo"
-	authusecase "weather_service/internal/usecase/authusecase"
-	weatherusecase "weather_service/internal/usecase/weatherusecase"
+	"weather_service/internal/infrastructure/repo/userrepo"
+	"weather_service/internal/usecase/authusecase"
+	"weather_service/internal/usecase/weatherusecase"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -17,12 +17,15 @@ import (
 func main() {
 	app := fiber.New()
 
-	cfg := config.LoadConfig()
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		panic(err)
+	}
 
 	db := connectors.ConnectPostgres(context.Background(), cfg)
 	defer db.Close()
 
-	userRepo := repo.NewUserRepository(db)
+	userRepo := userrepo.NewUserRepository(db)
 
 	authUC := authusecase.NewAuthUseCase(userRepo)
 	weatherUC := weatherusecase.NewWeatherUseCase()

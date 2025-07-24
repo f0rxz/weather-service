@@ -1,7 +1,7 @@
 package authhandler
 
 import (
-	authusecase "weather_service/internal/usecase/authusecase"
+	"weather_service/internal/usecase/authusecase"
 
 	"github.com/gofiber/fiber/v2"
 )

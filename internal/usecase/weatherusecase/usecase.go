@@ -1,4 +1,4 @@
-package usecase
+package weatherusecase
 
 type WeatherUseCase struct{}
 

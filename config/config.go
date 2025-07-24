@@ -1,24 +1,23 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/kelseyhightower/envconfig"
 )
 
 type Config struct {
-	DBHost          string `envconfig:"DB_HOST" required:"true"`
+	DBHost          string `envconfig:"DB_HOST" default:"localhost"`
 	DBPort          string `envconfig:"DB_PORT" default:"5432"`
-	DBUser          string `envconfig:"DB_USER" required:"true"`
-	DBPassword      string `envconfig:"DB_PASSWORD" required:"true"`
-	DBName          string `envconfig:"DB_NAME" required:"true"`
-	GOOSEMigrations string `envconfig:"GOOSE_MIGRATIONS" raquired:"true"`
+	DBUser          string `envconfig:"DB_USER" default:"postgres"`
+	DBPassword      string `envconfig:"DB_PASSWORD" default:"postgres"`
+	DBName          string `envconfig:"DB_NAME" default:"weather_db"`
+	GOOSEMigrations string `envconfig:"GOOSE_MIGRATIONS" default:"./migrations"`
+	APIKey          string `envconfig:"API_KEY" default:""`
 }
 
-func LoadConfig() *Config {
+func LoadConfig() (*Config, error) {
 	var cfg Config
 	if err := envconfig.Process("", &cfg); err != nil {
-		fmt.Errorf("Failed to load configuration: %v", err)
+		return nil, err
 	}
-	return &cfg
+	return &cfg, nil
 }

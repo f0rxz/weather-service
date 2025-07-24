@@ -2,13 +2,14 @@ package connectors
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"os"
 
 	"weather_service/config"
 
-	"github.com/jackc/pgx/stdlib"
 	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 )
 
@@ -23,12 +24,16 @@ func ConnectPostgres(ctx context.Context, cfg *config.Config) *pgxpool.Pool {
 	return pool
 }
 
-func RunMigrations(pool *pgxpool.Pool, migrationsDir string) error {
-	// Конвертируем pgxpool в *sql.DB
-	conn := pool.Config().ConnConfig
-	db := stdlib.OpenDB(*conn)
+func RunMigrations(cfg *config.Config) error {
+	connStr := "postgres://" + cfg.DBUser + ":" + cfg.DBPassword +
+		"@" + cfg.DBHost + ":" + cfg.DBPort + "/" + cfg.DBName
 
-	goose.SetBaseFS(os.DirFS(migrationsDir))
+	db, err := sql.Open("pgx", connStr)
+	if err != nil {
+		return err
+	}
+
+	goose.SetBaseFS(os.DirFS(cfg.GOOSEMigrations))
 	if err := goose.SetDialect("postgres"); err != nil {
 		return err
 	}

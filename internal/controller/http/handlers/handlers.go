@@ -3,8 +3,8 @@ package handlers
 import (
 	"weather_service/internal/controller/http/handlers/authhandler"
 	"weather_service/internal/controller/http/handlers/weatherhandler"
-	authusecase "weather_service/internal/usecase/authusecase"
-	weatherusecase "weather_service/internal/usecase/weatherusecase"
+	"weather_service/internal/usecase/authusecase"
+	"weather_service/internal/usecase/weatherusecase"
 )
 
 type Handlers struct {

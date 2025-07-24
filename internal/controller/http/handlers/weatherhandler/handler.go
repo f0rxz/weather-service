@@ -1,7 +1,7 @@
 package weatherhandler
 
 import (
-	weatherusecase "weather_service/internal/usecase/weatherusecase"
+	"weather_service/internal/usecase/weatherusecase"
 
 	"github.com/gofiber/fiber/v2"
 )

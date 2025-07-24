@@ -1,4 +1,4 @@
-package usecase
+package authusecase
 
 import (
 	repo "weather_service/internal/infrastructure/repo/userrepo"
