@@ -13,27 +13,21 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
-func ConnectPostgres(ctx context.Context, cfg *config.Config) *pgxpool.Pool {
-	connStr := "postgres://" + cfg.DBUser + ":" + cfg.DBPassword +
-		"@" + cfg.DBHost + ":" + cfg.DBPort + "/" + cfg.DBName
-
-	pool, err := pgxpool.New(ctx, connStr)
+func ConnectPostgres(ctx context.Context, cfg *config.Config) (*pgxpool.Pool, error) {
+	pool, err := pgxpool.New(ctx, cfg.PostgresDsn)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return pool
+	return pool, nil
 }
 
 func RunMigrations(cfg *config.Config) error {
-	connStr := "postgres://" + cfg.DBUser + ":" + cfg.DBPassword +
-		"@" + cfg.DBHost + ":" + cfg.DBPort + "/" + cfg.DBName
-
-	db, err := sql.Open("pgx", connStr)
+	db, err := sql.Open("pgx", cfg.PostgresDsn)
 	if err != nil {
 		return err
 	}
 
-	goose.SetBaseFS(os.DirFS(cfg.GOOSEMigrations))
+	goose.SetBaseFS(os.DirFS(cfg.GooseMigrations))
 	if err := goose.SetDialect("postgres"); err != nil {
 		return err
 	}

@@ -5,13 +5,10 @@ import (
 )
 
 type Config struct {
-	DBHost          string `envconfig:"DB_HOST" default:"localhost"`
-	DBPort          string `envconfig:"DB_PORT" default:"5432"`
-	DBUser          string `envconfig:"DB_USER" default:"postgres"`
-	DBPassword      string `envconfig:"DB_PASSWORD" default:"postgres"`
-	DBName          string `envconfig:"DB_NAME" default:"weather_db"`
-	GOOSEMigrations string `envconfig:"GOOSE_MIGRATIONS" default:"./migrations"`
-	APIKey          string `envconfig:"API_KEY" default:""`
+	PostgresDsn     string `envconfig:"POSTGRES_DSN" default:"postgresql://postgres:postgres@localhost:5432/weather_db?sslmode=disable"`
+	GooseMigrations string `envconfig:"GOOSE_MIGRATIONS" default:"./migrations"`
+	ApiKey          string `envconfig:"API_KEY" default:""`
+	RedisDsn        string `envconfig:"REDIS_DSN" default:"redis://localhost:6379/0"`
 }
 
 func LoadConfig() (*Config, error) {

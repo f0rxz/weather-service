@@ -24,7 +24,7 @@ func TestGetWeather(t *testing.T) {
 
 	mockRT := mocks.NewMockRoundTripper(ctrl)
 
-	service := NewService(cfg.APIKey, mockRT)
+	service := NewService(cfg.ApiKey, mockRT)
 	require.NotNil(t, service)
 
 	weathermodel, err := json.Marshal(models.WeatherResponse{

@@ -3,7 +3,8 @@ package models
 import "errors"
 
 var (
-	ErrNoLocation = errors.New("Error there is no location such that")
+	ErrNoLocation  = errors.New("Error there is no location such that")
+	ErrNoCacheCity = errors.New("There is no weather of this city")
 )
 
 type WeatherResponse struct {
