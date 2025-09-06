@@ -1,24 +1,21 @@
-package main
+package weatherusecase
 
 import (
 	"context"
+	"testing"
 	"weather_service/config"
-	"weather_service/internal/controller/httpservice"
 	"weather_service/internal/infrastructure/cache/weathercache"
 	"weather_service/internal/infrastructure/connectors"
-	"weather_service/internal/infrastructure/repo/userrepo"
 	"weather_service/internal/service/weatherservice"
-	"weather_service/internal/usecase/authusecase"
-	"weather_service/internal/usecase/weatherusecase"
+
+	"github.com/stretchr/testify/require"
 )
 
-func main() {
-
+func TestNewWeatherUseCase(t *testing.T) {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		panic(err)
 	}
-
 	ctx := context.Background()
 	db, err := connectors.ConnectPostgres(ctx, cfg)
 	if err != nil {
@@ -35,11 +32,11 @@ func main() {
 	weatherservice := weatherservice.NewService(cfg.ApiKey, nil)
 	weathercache := weathercache.NewWeatherCache(ch)
 
-	userRepo := userrepo.NewUserRepository(db)
+	weatherusecase := NewWeatherUseCase(weatherservice, weathercache)
 
-	authUC := authusecase.NewAuthUseCase(userRepo)
-	weatherUC := weatherusecase.NewWeatherUseCase(weatherservice, weathercache)
+	require.NotNil(t, weatherusecase)
+}
 
-	s := httpservice.NewServer(authUC, weatherUC)
-	s.RunServer(":8080")
+func TestWeatherUseCase_GetWeather(t *testing.T) {
+
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 	"weather_service/internal/models"
 )
 
@@ -24,6 +25,9 @@ func NewService(apiKey string, customTransport http.RoundTripper) *Service {
 }
 
 func (s Service) GetWeather(ctx context.Context, data string) (*models.WeatherResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+
 	req, err := http.NewRequestWithContext(ctx, "GET", "http://api.weatherapi.com/v1/current.json", nil)
 	if err != nil {
 		return nil, err

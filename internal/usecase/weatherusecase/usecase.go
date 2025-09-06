@@ -8,19 +8,23 @@ import (
 	"weather_service/internal/service/weatherservice"
 )
 
-type WeatherUseCase struct {
+type WeatherUseCase interface {
+	GetWeather(ctx context.Context, city string) (*models.WeatherResponse, error)
+}
+
+type weatherUseCase struct {
 	weatherservice *weatherservice.Service
 	weathercache   *weathercache.Cache
 }
 
-func NewWeatherUseCase(weatherservice *weatherservice.Service, weathercache *weathercache.Cache) *WeatherUseCase {
-	return &WeatherUseCase{
+func NewWeatherUseCase(weatherservice *weatherservice.Service, weathercache *weathercache.Cache) WeatherUseCase {
+	return &weatherUseCase{
 		weatherservice: weatherservice,
 		weathercache:   weathercache,
 	}
 }
 
-func (uc *WeatherUseCase) GetWeather(ctx context.Context, city string) (*models.WeatherResponse, error) {
+func (uc *weatherUseCase) GetWeather(ctx context.Context, city string) (*models.WeatherResponse, error) {
 	value, err := uc.weathercache.GetWeather(ctx, city)
 	if err != nil && !errors.Is(err, models.ErrNoCacheCity) {
 		return nil, err
