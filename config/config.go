@@ -1,35 +1,18 @@
 package config
 
-import (
-	"os"
-
-	"github.com/joho/godotenv"
-)
+import "github.com/kelseyhightower/envconfig"
 
 type Config struct {
-	PostgresDsn     string
-	GooseMigrations string
-	ApiKey          string
-	RedisDsn        string
+	PostgresDsn     string `envconfig:"POSTGRES_DSN" default:"postgresql://postgres:postgres@localhost:5432/weather_db?sslmode=disable"`
+	GooseMigrations string `envconfig:"GOOSE_MIGRATIONS" default:"./migrations"`
+	ApiKey          string `envconfig:"API_KEY" default:""`
+	RedisDsn        string `envconfig:"REDIS_DSN" default:"redis://localhost:6379/0"`
 }
 
 func LoadConfig() (*Config, error) {
-	// Load .env file
-	if err := godotenv.Load(); err != nil {
+	var cfg Config
+	if err := envconfig.Process("", &cfg); err != nil {
 		return nil, err
 	}
-
-	return &Config{
-		PostgresDsn:     getEnv("POSTGRES_DSN", "postgresql://postgres:postgres@localhost:5432/weather_db?sslmode=disable"),
-		GooseMigrations: getEnv("GOOSE_MIGRATIONS", "./migrations"),
-		ApiKey:          getEnv("API_KEY", ""),
-		RedisDsn:        getEnv("REDIS_DSN", "redis://localhost:6379/0"),
-	}, nil
-}
-
-func getEnv(key, defaultValue string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
-	}
-	return defaultValue
+	return &cfg, nil
 }

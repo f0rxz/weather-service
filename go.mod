@@ -6,7 +6,7 @@ require (
 	github.com/brianvoe/gofakeit/v7 v7.3.0
 	github.com/gofiber/fiber/v2 v2.52.8
 	github.com/jackc/pgx/v5 v5.7.5
-	github.com/joho/godotenv v1.5.1
+	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/pressly/goose/v3 v3.24.3
 	github.com/redis/go-redis/v9 v9.11.0
 	github.com/stretchr/testify v1.10.0
