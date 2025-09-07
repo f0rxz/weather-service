@@ -1,42 +1,164 @@
-package weatherusecase
+package weatherusecase_test
 
 import (
 	"context"
+	"errors"
 	"testing"
-	"weather_service/config"
-	"weather_service/internal/infrastructure/cache/weathercache"
-	"weather_service/internal/infrastructure/connectors"
-	"weather_service/internal/service/weatherservice"
+	"weather_service/internal/models"
+	"weather_service/internal/usecase/weatherusecase"
+	"weather_service/mocks"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
-func TestNewWeatherUseCase(t *testing.T) {
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		panic(err)
-	}
+func TestGetWeather_CacheHit(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	ctx := context.Background()
-	db, err := connectors.ConnectPostgres(ctx, cfg)
-	if err != nil {
-		panic(err)
+	mockCache := mocks.NewMockCache(ctrl)
+	mockService := mocks.NewMockService(ctrl)
+
+	expected := &models.WeatherResponse{
+		Location: models.Location{
+			Name:      "Paris",
+			Region:    "Ile-de-France",
+			Country:   "France",
+			Localtime: "2025-09-07 15:00",
+		},
+		Current: models.Current{
+			TempC:       25.0,
+			IsDay:       1,
+			Condition:   models.Condition{Text: "Partly cloudy"},
+			WindKPH:     12.5,
+			FeelslikeC:  26.3,
+			LastUpdated: "2025-09-07 14:50",
+		},
 	}
-	defer db.Close()
 
-	ch, err := connectors.ConnectRedis(ctx, cfg)
-	if err != nil {
-		panic(err)
-	}
-	defer ch.Close()
+	mockCache.
+		EXPECT().
+		GetWeather(ctx, "Paris").
+		Return(expected, nil)
 
-	weatherservice := weatherservice.NewService(cfg.ApiKey, nil)
-	weathercache := weathercache.NewWeatherCache(ch)
+	useCase := weatherusecase.NewWeatherUseCase(mockService, mockCache)
 
-	weatherusecase := NewWeatherUseCase(weatherservice, weathercache)
-
-	require.NotNil(t, weatherusecase)
+	result, err := useCase.GetWeather(ctx, "Paris")
+	require.NoError(t, err)
+	require.Equal(t, expected, result)
 }
 
-func TestWeatherUseCase_GetWeather(t *testing.T) {
+func TestGetWeather_CacheMiss_ThenSuccess(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
+	ctx := context.Background()
+	mockCache := mocks.NewMockCache(ctrl)
+	mockService := mocks.NewMockService(ctrl)
+
+	expected := &models.WeatherResponse{
+		Location: models.Location{
+			Name:      "Tokyo",
+			Region:    "Kanto",
+			Country:   "Japan",
+			Localtime: "2025-09-07 18:00",
+		},
+		Current: models.Current{
+			TempC:       30.0,
+			IsDay:       1,
+			Condition:   models.Condition{Text: "Sunny"},
+			WindKPH:     15.0,
+			FeelslikeC:  33.0,
+			LastUpdated: "2025-09-07 17:50",
+		},
+	}
+
+	gomock.InOrder(
+		mockCache.EXPECT().GetWeather(ctx, "Tokyo").Return(nil, models.ErrNoCacheCity),
+		mockService.EXPECT().GetWeather(ctx, "Tokyo").Return(expected, nil),
+		mockCache.EXPECT().SetWeather(ctx, "Tokyo", expected).Return(nil),
+	)
+
+	useCase := weatherusecase.NewWeatherUseCase(mockService, mockCache)
+
+	result, err := useCase.GetWeather(ctx, "Tokyo")
+	require.NoError(t, err)
+	require.Equal(t, expected, result)
+}
+
+func TestGetWeather_CacheMiss_ServiceFails(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	ctx := context.Background()
+	mockCache := mocks.NewMockCache(ctrl)
+	mockService := mocks.NewMockService(ctrl)
+
+	mockCache.EXPECT().GetWeather(ctx, "London").Return(nil, models.ErrNoCacheCity)
+	mockService.EXPECT().GetWeather(ctx, "London").Return(nil, errors.New("service error"))
+
+	useCase := weatherusecase.NewWeatherUseCase(mockService, mockCache)
+
+	result, err := useCase.GetWeather(ctx, "London")
+	require.Error(t, err)
+	require.Nil(t, result)
+	require.EqualError(t, err, "service error")
+}
+
+func TestGetWeather_CacheReturnsUnexpectedError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	ctx := context.Background()
+	mockCache := mocks.NewMockCache(ctrl)
+	mockService := mocks.NewMockService(ctrl)
+
+	mockCache.EXPECT().GetWeather(ctx, "Berlin").Return(nil, errors.New("cache failure"))
+
+	useCase := weatherusecase.NewWeatherUseCase(mockService, mockCache)
+
+	result, err := useCase.GetWeather(ctx, "Berlin")
+	require.Error(t, err)
+	require.Nil(t, result)
+	require.EqualError(t, err, "cache failure")
+}
+
+func TestGetWeather_CacheSetFails(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	ctx := context.Background()
+	mockCache := mocks.NewMockCache(ctrl)
+	mockService := mocks.NewMockService(ctrl)
+
+	expected := &models.WeatherResponse{
+		Location: models.Location{
+			Name:      "Oslo",
+			Region:    "Oslo",
+			Country:   "Norway",
+			Localtime: "2025-09-07 13:00",
+		},
+		Current: models.Current{
+			TempC:       22.0,
+			IsDay:       1,
+			Condition:   models.Condition{Text: "Cloudy"},
+			WindKPH:     10.5,
+			FeelslikeC:  21.0,
+			LastUpdated: "2025-09-07 12:45",
+		},
+	}
+
+	gomock.InOrder(
+		mockCache.EXPECT().GetWeather(ctx, "Oslo").Return(nil, models.ErrNoCacheCity),
+		mockService.EXPECT().GetWeather(ctx, "Oslo").Return(expected, nil),
+		mockCache.EXPECT().SetWeather(ctx, "Oslo", expected).Return(errors.New("cache write failed")),
+	)
+
+	useCase := weatherusecase.NewWeatherUseCase(mockService, mockCache)
+
+	result, err := useCase.GetWeather(ctx, "Oslo")
+	require.Error(t, err)
+	require.Nil(t, result)
+	require.EqualError(t, err, "cache write failed")
 }

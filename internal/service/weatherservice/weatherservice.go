@@ -8,23 +8,27 @@ import (
 	"weather_service/internal/models"
 )
 
-type Service struct {
+type Service interface {
+	GetWeather(ctx context.Context, data string) (*models.WeatherResponse, error)
+}
+
+type service struct {
 	apiKey    string
 	transport http.RoundTripper
 }
 
-func NewService(apiKey string, customTransport http.RoundTripper) *Service {
+func NewService(apiKey string, customTransport http.RoundTripper) Service {
 	if customTransport == nil {
 		customTransport = http.DefaultTransport
 	}
 
-	return &Service{
+	return &service{
 		apiKey:    apiKey,
 		transport: customTransport,
 	}
 }
 
-func (s Service) GetWeather(ctx context.Context, data string) (*models.WeatherResponse, error) {
+func (s service) GetWeather(ctx context.Context, data string) (*models.WeatherResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 

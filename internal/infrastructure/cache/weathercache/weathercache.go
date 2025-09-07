@@ -10,17 +10,22 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type Cache struct {
+type Cache interface {
+	SetWeather(ctx context.Context, city string, weathervalue *models.WeatherResponse) error
+	GetWeather(ctx context.Context, city string) (*models.WeatherResponse, error)
+}
+
+type redisCache struct {
 	cache *redis.Client
 }
 
-func NewWeatherCache(cache *redis.Client) *Cache {
-	return &Cache{
+func NewWeatherCache(cache *redis.Client) Cache {
+	return &redisCache{
 		cache: cache,
 	}
 }
 
-func (c Cache) SetWeather(ctx context.Context, city string, weathervalue *models.WeatherResponse) error {
+func (c redisCache) SetWeather(ctx context.Context, city string, weathervalue *models.WeatherResponse) error {
 	value, err := json.Marshal(weathervalue)
 	if err != nil {
 		return err
@@ -31,7 +36,7 @@ func (c Cache) SetWeather(ctx context.Context, city string, weathervalue *models
 	return nil
 }
 
-func (c Cache) GetWeather(ctx context.Context, city string) (*models.WeatherResponse, error) {
+func (c redisCache) GetWeather(ctx context.Context, city string) (*models.WeatherResponse, error) {
 	value, err := c.cache.Get(ctx, city).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {

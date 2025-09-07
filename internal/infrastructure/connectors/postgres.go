@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"weather_service/config"
 
@@ -27,7 +28,12 @@ func RunMigrations(cfg *config.Config) error {
 		return err
 	}
 
-	goose.SetBaseFS(os.DirFS(cfg.GooseMigrations))
+	abs, err := filepath.Abs(cfg.GooseMigrations)
+	if err != nil {
+		return err
+	}
+
+	goose.SetBaseFS(os.DirFS(abs))
 	if err := goose.SetDialect("postgres"); err != nil {
 		return err
 	}

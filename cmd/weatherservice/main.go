@@ -10,10 +10,14 @@ import (
 	"weather_service/internal/service/weatherservice"
 	"weather_service/internal/usecase/authusecase"
 	"weather_service/internal/usecase/weatherusecase"
+	"weather_service/pkg/logger"
 )
 
 func main() {
-
+	logger, err := logger.NewZapLogger()
+	if err != nil {
+		panic(err)
+	}
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		panic(err)
@@ -40,6 +44,6 @@ func main() {
 	authUC := authusecase.NewAuthUseCase(userRepo)
 	weatherUC := weatherusecase.NewWeatherUseCase(weatherservice, weathercache)
 
-	s := httpservice.NewServer(authUC, weatherUC)
+	s := httpservice.NewServer(logger, authUC, weatherUC)
 	s.RunServer(":8080")
 }

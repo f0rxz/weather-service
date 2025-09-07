@@ -13,11 +13,11 @@ type WeatherUseCase interface {
 }
 
 type weatherUseCase struct {
-	weatherservice *weatherservice.Service
-	weathercache   *weathercache.Cache
+	weatherservice weatherservice.Service
+	weathercache   weathercache.Cache
 }
 
-func NewWeatherUseCase(weatherservice *weatherservice.Service, weathercache *weathercache.Cache) WeatherUseCase {
+func NewWeatherUseCase(weatherservice weatherservice.Service, weathercache weathercache.Cache) WeatherUseCase {
 	return &weatherUseCase{
 		weatherservice: weatherservice,
 		weathercache:   weathercache,

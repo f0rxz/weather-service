@@ -10,7 +10,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 	if err = connectors.RunMigrations(cfg); err != nil {
 		panic(err)
 	}
