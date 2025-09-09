@@ -5,7 +5,8 @@ import (
 	"weather_service/internal/controller/httpservice/handlers/weatherhandler"
 	"weather_service/internal/usecase/authusecase"
 	"weather_service/internal/usecase/weatherusecase"
-	"weather_service/pkg/logger"
+
+	"go.uber.org/zap"
 )
 
 type Handlers struct {
@@ -13,7 +14,7 @@ type Handlers struct {
 	AuthHandler    *authhandler.Handler
 }
 
-func NewHandlers(auth *authusecase.AuthUseCase, weather weatherusecase.WeatherUseCase, logger *logger.Logger) *Handlers {
+func NewHandlers(auth *authusecase.AuthUseCase, weather weatherusecase.WeatherUseCase, logger *zap.Logger) *Handlers {
 	return &Handlers{
 		WeatherHandler: weatherhandler.NewHandler(logger, weather),
 		AuthHandler:    authhandler.NewHandler(auth),

@@ -13,9 +13,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
 )
 
 func TestGetWeather(t *testing.T) {
+
 	cfg, err := config.LoadConfig()
 	require.NoError(t, err)
 
@@ -37,7 +39,7 @@ func TestGetWeather(t *testing.T) {
 		Return(&http.Response{Body: io.NopCloser(bytes.NewReader(weathermodel))}, nil).
 		Times(1)
 
-	result, err := service.GetWeather(context.Background(), "Tula")
+	result, err := service.GetWeather(context.Background(), zap.NewNop(), "Tula")
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.Equal(t, "Tula", result.Location.Name)
@@ -47,7 +49,7 @@ func TestGetWeather(t *testing.T) {
 		Return(&http.Response{StatusCode: 400}, nil).
 		Times(1)
 
-	result, err = service.GetWeather(context.Background(), "Artemland")
+	result, err = service.GetWeather(context.Background(), zap.NewNop(), "Artemland")
 	require.ErrorIs(t, models.ErrNoLocation, err)
 	require.Nil(t, result)
 }

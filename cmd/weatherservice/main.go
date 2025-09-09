@@ -10,11 +10,12 @@ import (
 	"weather_service/internal/service/weatherservice"
 	"weather_service/internal/usecase/authusecase"
 	"weather_service/internal/usecase/weatherusecase"
-	"weather_service/pkg/logger"
+
+	"go.uber.org/zap"
 )
 
 func main() {
-	logger, err := logger.NewZapLogger()
+	logger, err := zap.NewProduction()
 	if err != nil {
 		panic(err)
 	}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
 )
 
 func TestGetWeather_CacheHit(t *testing.T) {
@@ -39,12 +40,12 @@ func TestGetWeather_CacheHit(t *testing.T) {
 
 	mockCache.
 		EXPECT().
-		GetWeather(ctx, "Paris").
+		GetWeather(ctx, zap.NewNop(), "Paris").
 		Return(expected, nil)
 
 	useCase := weatherusecase.NewWeatherUseCase(mockService, mockCache)
 
-	result, err := useCase.GetWeather(ctx, "Paris")
+	result, err := useCase.GetWeather(ctx, nil, "Paris")
 	require.NoError(t, err)
 	require.Equal(t, expected, result)
 }
@@ -75,14 +76,14 @@ func TestGetWeather_CacheMiss_ThenSuccess(t *testing.T) {
 	}
 
 	gomock.InOrder(
-		mockCache.EXPECT().GetWeather(ctx, "Tokyo").Return(nil, models.ErrNoCacheCity),
-		mockService.EXPECT().GetWeather(ctx, "Tokyo").Return(expected, nil),
-		mockCache.EXPECT().SetWeather(ctx, "Tokyo", expected).Return(nil),
+		mockCache.EXPECT().GetWeather(ctx, zap.NewNop(), "Tokyo").Return(nil, models.ErrNoCacheCity),
+		mockService.EXPECT().GetWeather(ctx, zap.NewNop(), "Tokyo").Return(expected, nil),
+		mockCache.EXPECT().SetWeather(ctx, zap.NewNop(), "Tokyo", expected).Return(nil),
 	)
 
 	useCase := weatherusecase.NewWeatherUseCase(mockService, mockCache)
 
-	result, err := useCase.GetWeather(ctx, "Tokyo")
+	result, err := useCase.GetWeather(ctx, nil, "Tokyo")
 	require.NoError(t, err)
 	require.Equal(t, expected, result)
 }
@@ -95,12 +96,12 @@ func TestGetWeather_CacheMiss_ServiceFails(t *testing.T) {
 	mockCache := mocks.NewMockCache(ctrl)
 	mockService := mocks.NewMockService(ctrl)
 
-	mockCache.EXPECT().GetWeather(ctx, "London").Return(nil, models.ErrNoCacheCity)
-	mockService.EXPECT().GetWeather(ctx, "London").Return(nil, errors.New("service error"))
+	mockCache.EXPECT().GetWeather(ctx, zap.NewNop(), "London").Return(nil, models.ErrNoCacheCity)
+	mockService.EXPECT().GetWeather(ctx, zap.NewNop(), "London").Return(nil, errors.New("service error"))
 
 	useCase := weatherusecase.NewWeatherUseCase(mockService, mockCache)
 
-	result, err := useCase.GetWeather(ctx, "London")
+	result, err := useCase.GetWeather(ctx, zap.NewNop(), "London")
 	require.Error(t, err)
 	require.Nil(t, result)
 	require.EqualError(t, err, "service error")
@@ -114,11 +115,11 @@ func TestGetWeather_CacheReturnsUnexpectedError(t *testing.T) {
 	mockCache := mocks.NewMockCache(ctrl)
 	mockService := mocks.NewMockService(ctrl)
 
-	mockCache.EXPECT().GetWeather(ctx, "Berlin").Return(nil, errors.New("cache failure"))
+	mockCache.EXPECT().GetWeather(ctx, zap.NewNop(), "Berlin").Return(nil, errors.New("cache failure"))
 
 	useCase := weatherusecase.NewWeatherUseCase(mockService, mockCache)
 
-	result, err := useCase.GetWeather(ctx, "Berlin")
+	result, err := useCase.GetWeather(ctx, zap.NewNop(), "Berlin")
 	require.Error(t, err)
 	require.Nil(t, result)
 	require.EqualError(t, err, "cache failure")
@@ -150,14 +151,14 @@ func TestGetWeather_CacheSetFails(t *testing.T) {
 	}
 
 	gomock.InOrder(
-		mockCache.EXPECT().GetWeather(ctx, "Oslo").Return(nil, models.ErrNoCacheCity),
-		mockService.EXPECT().GetWeather(ctx, "Oslo").Return(expected, nil),
-		mockCache.EXPECT().SetWeather(ctx, "Oslo", expected).Return(errors.New("cache write failed")),
+		mockCache.EXPECT().GetWeather(ctx, zap.NewNop(), "Oslo").Return(nil, models.ErrNoCacheCity),
+		mockService.EXPECT().GetWeather(ctx, zap.NewNop(), "Oslo").Return(expected, nil),
+		mockCache.EXPECT().SetWeather(ctx, zap.NewNop(), "Oslo", expected).Return(errors.New("cache write failed")),
 	)
 
 	useCase := weatherusecase.NewWeatherUseCase(mockService, mockCache)
 
-	result, err := useCase.GetWeather(ctx, "Oslo")
+	result, err := useCase.GetWeather(ctx, zap.NewNop(), "Oslo")
 	require.Error(t, err)
 	require.Nil(t, result)
 	require.EqualError(t, err, "cache write failed")

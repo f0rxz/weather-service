@@ -5,18 +5,17 @@ import (
 	"weather_service/internal/controller/httpservice/handlers"
 	"weather_service/internal/usecase/authusecase"
 	"weather_service/internal/usecase/weatherusecase"
-	zaplogger "weather_service/pkg/logger"
 
 	"github.com/gofiber/fiber/v2"
-	fiberlogger "github.com/gofiber/fiber/v2/middleware/logger"
+	"go.uber.org/zap"
 )
 
 type Server struct {
 	handlers *handlers.Handlers
-	logger   *zaplogger.Logger
+	logger   *zap.Logger
 }
 
-func NewServer(logger *zaplogger.Logger, auth *authusecase.AuthUseCase, weather weatherusecase.WeatherUseCase) *Server {
+func NewServer(logger *zap.Logger, auth *authusecase.AuthUseCase, weather weatherusecase.WeatherUseCase) *Server {
 	return &Server{
 		handlers: handlers.NewHandlers(auth, weather, logger),
 		logger:   logger,
@@ -25,7 +24,6 @@ func NewServer(logger *zaplogger.Logger, auth *authusecase.AuthUseCase, weather 
 
 func (s Server) RunServer(port string) {
 	app := fiber.New()
-	app.Use(fiberlogger.New())
 
 	s.SetupRoutes(app)
 

@@ -6,10 +6,12 @@ import (
 	"weather_service/internal/infrastructure/cache/weathercache"
 	"weather_service/internal/models"
 	"weather_service/internal/service/weatherservice"
+
+	"go.uber.org/zap"
 )
 
 type WeatherUseCase interface {
-	GetWeather(ctx context.Context, city string) (*models.WeatherResponse, error)
+	GetWeather(ctx context.Context, logger *zap.Logger, city string) (*models.WeatherResponse, error)
 }
 
 type weatherUseCase struct {
@@ -24,24 +26,35 @@ func NewWeatherUseCase(weatherservice weatherservice.Service, weathercache weath
 	}
 }
 
-func (uc *weatherUseCase) GetWeather(ctx context.Context, city string) (*models.WeatherResponse, error) {
-	value, err := uc.weathercache.GetWeather(ctx, city)
+func (uc *weatherUseCase) GetWeather(ctx context.Context, logger *zap.Logger, city string) (*models.WeatherResponse, error) {
+	logger = logger.With(zap.String("WeatherUseCase", "GetWeather"))
+
+	logger.Info("Starting to recieve weather in usecase layer.")
+	value, err := uc.weathercache.GetWeather(ctx, logger, city)
 	if err != nil && !errors.Is(err, models.ErrNoCacheCity) {
+		logger.Error("Error in usecase layer while getting cache" + err.Error())
 		return nil, err
 	}
-
+	logger.Info("Finishing to recieve weather in usecase layer.")
 	if value != nil {
 		return value, nil
 	}
 
-	value, err = uc.weatherservice.GetWeather(ctx, city)
+	logger.Info("Started to requesting weather service in usecase layer.")
+	value, err = uc.weatherservice.GetWeather(ctx, logger, city)
 	if err != nil {
+		logger.Error("Error while requesting weather service in usecase layer" + err.Error())
 		return nil, err
 	}
+	logger.Info("Finished to requesting weather service in usecase layer.")
 
-	if err = uc.weathercache.SetWeather(ctx, city, value); err != nil {
+	logger.Info("Started to recording cache in usecase layer.")
+	if err = uc.weathercache.SetWeather(ctx, logger, city, value); err != nil {
+		logger.Error("Error while recording weather city info in cache in usecase layer" + err.Error())
 		return nil, err
 	}
+	logger.Info("Finished to recording cache in usecase layer.")
 
+	logger.Info("Finished to recieve weather in usecase layer.")
 	return value, nil
 }

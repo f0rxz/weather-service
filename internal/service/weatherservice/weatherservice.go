@@ -6,10 +6,12 @@ import (
 	"net/http"
 	"time"
 	"weather_service/internal/models"
+
+	"go.uber.org/zap"
 )
 
 type Service interface {
-	GetWeather(ctx context.Context, data string) (*models.WeatherResponse, error)
+	GetWeather(ctx context.Context, logger *zap.Logger, data string) (*models.WeatherResponse, error)
 }
 
 type service struct {
@@ -28,12 +30,16 @@ func NewService(apiKey string, customTransport http.RoundTripper) Service {
 	}
 }
 
-func (s service) GetWeather(ctx context.Context, data string) (*models.WeatherResponse, error) {
+func (s service) GetWeather(ctx context.Context, logger *zap.Logger, data string) (*models.WeatherResponse, error) {
+	logger = logger.With(zap.String("Service", "GetWeather"))
+
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 
+	logger.Info("Started requesting data from API in service layer.")
 	req, err := http.NewRequestWithContext(ctx, "GET", "http://api.weatherapi.com/v1/current.json", nil)
 	if err != nil {
+		logger.Error("Error can't form a request" + err.Error())
 		return nil, err
 	}
 	values := req.URL.Query()
@@ -45,16 +51,20 @@ func (s service) GetWeather(ctx context.Context, data string) (*models.WeatherRe
 
 	res, err := client.Do(req)
 	if err != nil {
+		logger.Error("Error while doing request" + err.Error())
 		return nil, err
 	}
 	if res.StatusCode == http.StatusBadRequest {
+		logger.Error("Error bad request" + err.Error())
 		return nil, models.ErrNoLocation
 	}
 
 	result := &models.WeatherResponse{}
 	if err = json.NewDecoder(res.Body).Decode(result); err != nil {
+		logger.Error("Error can't decode json" + err.Error())
 		return nil, err
 	}
+	logger.Info("Finished requesting data from API in service layer.")
 
 	return result, nil
 }

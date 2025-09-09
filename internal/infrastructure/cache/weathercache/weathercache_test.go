@@ -9,6 +9,7 @@ import (
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestWeatherCache_SetWeather(t *testing.T) {
@@ -25,7 +26,7 @@ func TestWeatherCache_SetWeather(t *testing.T) {
 	err = gofakeit.Struct(&weathervalue)
 	require.NoError(t, err)
 
-	err = weathercache.SetWeather(context.Background(), "Tula", weathervalue)
+	err = weathercache.SetWeather(context.Background(), zap.NewNop(), "Tula", weathervalue)
 	require.NoError(t, err)
 }
 
@@ -43,14 +44,14 @@ func TestWeatherCache_GetWeather(t *testing.T) {
 	err = gofakeit.Struct(&weathervalue)
 	require.NoError(t, err)
 
-	err = weathercache.SetWeather(context.Background(), "Tula", weathervalue)
+	err = weathercache.SetWeather(context.Background(), zap.NewNop(), "Tula", weathervalue)
 	require.NoError(t, err)
 
-	response, err := weathercache.GetWeather(context.Background(), "Tula")
+	response, err := weathercache.GetWeather(context.Background(), zap.NewNop(), "Tula")
 	require.Equal(t, weathervalue, response)
 	require.NoError(t, err)
 
-	response, err = weathercache.GetWeather(context.Background(), "Хуйляндия")
+	response, err = weathercache.GetWeather(context.Background(), zap.NewNop(), "FTGLandia")
 	require.Nil(t, response)
 	require.ErrorIs(t, err, models.ErrNoCacheCity)
 }

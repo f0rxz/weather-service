@@ -2,17 +2,17 @@ package weatherhandler
 
 import (
 	"weather_service/internal/usecase/weatherusecase"
-	"weather_service/pkg/logger"
 
 	"github.com/gofiber/fiber/v2"
+	"go.uber.org/zap"
 )
 
 type Handler struct {
 	weatherUC weatherusecase.WeatherUseCase
-	logger    *logger.Logger
+	logger    *zap.Logger
 }
 
-func NewHandler(logger *logger.Logger, weatherUC weatherusecase.WeatherUseCase) *Handler {
+func NewHandler(logger *zap.Logger, weatherUC weatherusecase.WeatherUseCase) *Handler {
 	return &Handler{
 		weatherUC: weatherUC,
 		logger:    logger,
@@ -20,10 +20,13 @@ func NewHandler(logger *logger.Logger, weatherUC weatherusecase.WeatherUseCase) 
 }
 
 func (h *Handler) GetWeather(c *fiber.Ctx) error {
+	h.logger = h.logger.With(zap.String("Handler", "GetWeather"))
+
 	city := c.Params("city")
-	result, err := h.weatherUC.GetWeather(c.Context(), city)
+	h.logger.Info("Request in service layer was called.")
+	result, err := h.weatherUC.GetWeather(c.Context(), h.logger, city)
 	if err != nil {
-		h.logger.Error(err.Error())
+		h.logger.Error("Error while requesting in service was occurred" + err.Error())
 		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
 	}
 	h.logger.Info("Request weather completed successfully.")

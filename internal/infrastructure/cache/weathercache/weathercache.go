@@ -8,11 +8,12 @@ import (
 	"weather_service/internal/models"
 
 	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 )
 
 type Cache interface {
-	SetWeather(ctx context.Context, city string, weathervalue *models.WeatherResponse) error
-	GetWeather(ctx context.Context, city string) (*models.WeatherResponse, error)
+	SetWeather(ctx context.Context, logger *zap.Logger, city string, weathervalue *models.WeatherResponse) error
+	GetWeather(ctx context.Context, logger *zap.Logger, city string) (*models.WeatherResponse, error)
 }
 
 type redisCache struct {
@@ -25,21 +26,33 @@ func NewWeatherCache(cache *redis.Client) Cache {
 	}
 }
 
-func (c redisCache) SetWeather(ctx context.Context, city string, weathervalue *models.WeatherResponse) error {
+func (c redisCache) SetWeather(ctx context.Context, logger *zap.Logger, city string, weathervalue *models.WeatherResponse) error {
+	logger = logger.With(zap.String("redisCache", "SetWeather"))
+
+	logger.Info("Started setting cache data.")
 	value, err := json.Marshal(weathervalue)
 	if err != nil {
+		logger.Error("Error in cache layer while json marshal" + err.Error())
 		return err
 	}
 	if err := c.cache.Set(ctx, city, value, time.Minute*30).Err(); err != nil {
+		logger.Error("Error while setting cache value in cache layer" + err.Error())
 		return err
 	}
+	logger.Info("Finished setting cache data.")
+
 	return nil
 }
 
-func (c redisCache) GetWeather(ctx context.Context, city string) (*models.WeatherResponse, error) {
+func (c redisCache) GetWeather(ctx context.Context, logger *zap.Logger, city string) (*models.WeatherResponse, error) {
+	logger = logger.With(zap.String("RedisCache", "GetWeather"))
+
+	logger.Info("Started getting cache data.")
 	value, err := c.cache.Get(ctx, city).Result()
 	if err != nil {
+		logger.Error("Error in cache layer while getting cache data" + err.Error())
 		if errors.Is(err, redis.Nil) {
+			logger.Error("Error in cache layer while getting cache data and key doesnt exist" + err.Error())
 			return nil, models.ErrNoCacheCity
 		}
 		return nil, err
@@ -47,8 +60,10 @@ func (c redisCache) GetWeather(ctx context.Context, city string) (*models.Weathe
 
 	response := models.WeatherResponse{}
 	if err := json.Unmarshal([]byte(value), &response); err != nil {
+		logger.Error("Error in cache layer while unmarshaling json data" + err.Error())
 		return nil, err
 	}
+	logger.Info("Finished getting cache data.")
 
 	return &response, nil
 }
