@@ -32,14 +32,13 @@ func (c redisCache) SetWeather(ctx context.Context, logger *zap.Logger, city str
 	logger.Info("Started setting cache data.")
 	value, err := json.Marshal(weathervalue)
 	if err != nil {
-		logger.Error("Error in cache layer while json marshal" + err.Error())
+		logger.Error("Error in cache layer while json marshal", zap.Error(err))
 		return err
 	}
 	if err := c.cache.Set(ctx, city, value, time.Minute*30).Err(); err != nil {
-		logger.Error("Error while setting cache value in cache layer" + err.Error())
+		logger.Error("Error while setting cache value in cache layer", zap.Error(err))
 		return err
 	}
-	logger.Info("Finished setting cache data.")
 
 	return nil
 }
@@ -50,9 +49,9 @@ func (c redisCache) GetWeather(ctx context.Context, logger *zap.Logger, city str
 	logger.Info("Started getting cache data.")
 	value, err := c.cache.Get(ctx, city).Result()
 	if err != nil {
-		logger.Error("Error in cache layer while getting cache data" + err.Error())
+		logger.Error("Error in cache layer while getting cache data", zap.Error(err))
 		if errors.Is(err, redis.Nil) {
-			logger.Error("Error in cache layer while getting cache data and key doesnt exist" + err.Error())
+			logger.Error("Error in cache layer while getting cache data and key doesnt exist", zap.Error(err))
 			return nil, models.ErrNoCacheCity
 		}
 		return nil, err
@@ -60,10 +59,9 @@ func (c redisCache) GetWeather(ctx context.Context, logger *zap.Logger, city str
 
 	response := models.WeatherResponse{}
 	if err := json.Unmarshal([]byte(value), &response); err != nil {
-		logger.Error("Error in cache layer while unmarshaling json data" + err.Error())
+		logger.Error("Error in cache layer while unmarshaling json data", zap.Error(err))
 		return nil, err
 	}
-	logger.Info("Finished getting cache data.")
 
 	return &response, nil
 }

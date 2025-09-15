@@ -32,29 +32,23 @@ func (uc *weatherUseCase) GetWeather(ctx context.Context, logger *zap.Logger, ci
 	logger.Info("Starting to recieve weather in usecase layer.")
 	value, err := uc.weathercache.GetWeather(ctx, logger, city)
 	if err != nil && !errors.Is(err, models.ErrNoCacheCity) {
-		logger.Error("Error in usecase layer while getting cache" + err.Error())
+		logger.Error("Error in usecase layer while getting cache", zap.Error(err))
 		return nil, err
 	}
-	logger.Info("Finishing to recieve weather in usecase layer.")
 	if value != nil {
 		return value, nil
 	}
 
-	logger.Info("Started to requesting weather service in usecase layer.")
 	value, err = uc.weatherservice.GetWeather(ctx, logger, city)
 	if err != nil {
-		logger.Error("Error while requesting weather service in usecase layer" + err.Error())
+		logger.Error("Error while requesting weather service in usecase layer", zap.Error(err))
 		return nil, err
 	}
-	logger.Info("Finished to requesting weather service in usecase layer.")
 
-	logger.Info("Started to recording cache in usecase layer.")
 	if err = uc.weathercache.SetWeather(ctx, logger, city, value); err != nil {
-		logger.Error("Error while recording weather city info in cache in usecase layer" + err.Error())
+		logger.Error("Error while recording weather city info in cache in usecase layer", zap.Error(err))
 		return nil, err
 	}
-	logger.Info("Finished to recording cache in usecase layer.")
 
-	logger.Info("Finished to recieve weather in usecase layer.")
 	return value, nil
 }
