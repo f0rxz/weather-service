@@ -1,2 +1,2 @@
 # weather-service
-nothing there yet
+Basic web app with clean architecture and work with API
